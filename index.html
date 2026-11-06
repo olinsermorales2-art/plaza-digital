@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>tianguis digital Digital - Tu plaza en el celular</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Estilos Personalizados -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-900 font-sans text-slate-800 antialiased min-h-screen flex justify-center items-start">
+
+  <div class="w-full max-w-md bg-slate-50 min-h-screen shadow-2xl relative flex flex-col pb-24 overflow-x-hidden border-x border-slate-200">
+
+    <!-- HEADER ESTILO SHEIN / TIANGUIS -->
+    <header class="gradient-header text-white p-4 sticky top-0 z-30 shadow-md">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2 cursor-pointer" onclick="limpiarFiltroVendedor()">
+          <div class="bg-white/20 p-2 rounded-xl backdrop-blur-md">
+            <i class="fa-solid font-bold fa-store text-xl text-yellow-300"></i>
+          </div>
+          <div>
+            <h1 class="font-outfit font-extrabold text-2xl tracking-tight leading-none text-white">
+              Tianguis<span class="text-yellow-300">.</span>
+            </h1>
+            <p class="text-[10px] text-red-100 font-medium tracking-wide">PLAZA DIGITAL</p>
+          </div>
+        </div>
+
+        <button onclick="intentarPublicarPuesto()" class="bg-yellow-400 text-slate-900 font-extrabold text-xs px-3 py-2 rounded-full shadow-lg flex items-center gap-1.5 hover:bg-yellow-300 transition-colors">
+          <i class="fa-solid fa-plus"></i> Publicar Puesto
+        </button>
+      </div>
+
+      <!-- Buscador -->
+      <div class="relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
+        <input 
+          type="text" 
+          id="search-input" 
+          oninput="handleSearch()"
+          placeholder="Buscar ropa, antojos, hogar, clases..." 
+          class="w-full pl-10 pr-4 py-2.5 rounded-2xl text-slate-800 bg-white placeholder-gray-400 text-sm font-medium focus:outline-none shadow-inner"
+        >
+      </div>
+    </header>
+
+    <!-- BANNER DE FILTRO DE VENDEDOR -->
+    <div id="bannerVendedorActivo" class="hidden bg-slate-800 text-white p-3 flex justify-between items-center text-xs font-bold shadow-inner">
+      <span id="txtVendedorFiltrado">🏪 Viendo puesto de: </span>
+      <button onclick="limpiarFiltroVendedor()" class="bg-red-500 hover:bg-red-600 text-white text-[10px] px-2.5 py-1 rounded-lg">
+        Ver toda la plaza 🎪
+      </button>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main id="main-content" class="flex-grow">
+      
+      <!-- VISTA FEED / CATÁLOGO -->
+      <section id="view-feed" class="block">
+        
+        <!-- BARRA DE CATEGORÍAS HORIZONTAL -->
+        <div class="bg-white border-b border-slate-100 py-3 shadow-sm">
+          <div class="flex gap-2 px-4 overflow-x-auto no-scrollbar">
+            <button onclick="filtrarCategoria('todos', this)" class="categoria-btn px-4 py-1.5 rounded-full text-xs font-bold bg-red-500 text-white shrink-0 shadow-sm">🔥 Todo</button>
+            <button onclick="filtrarCategoria('moda', this)" class="categoria-btn px-4 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 shrink-0">👗 Ropa y Moda</button>
+            <button onclick="filtrarCategoria('antojitos', this)" class="categoria-btn px-4 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 shrink-0">🍔 Antojitos y Postres</button>
+            <button onclick="filtrarCategoria('hogar', this)" class="categoria-btn px-4 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 shrink-0">📚 Hogar y Papelería</button>
+            <button onclick="filtrarCategoria('servicios', this)" class="categoria-btn px-4 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 shrink-0">🎨 Talleres y Servicios</button>
+            <button onclick="filtrarCategoria('temporada', this)" class="categoria-btn px-4 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 shrink-0">🎃🎄 Temporada</button>
+          </div>
+        </div>
+
+        <!-- CATÁLOGO DE PRODUCTOS -->
+        <div class="p-4">
+          <div class="flex justify-between items-center mb-3">
+            <h2 class="font-outfit font-bold text-slate-800 text-base">Novedades en la Plaza</h2>
+            <span id="product-count" class="text-xs text-slate-500 font-semibold">0 artículos</span>
+          </div>
+
+          <div id="products-grid" class="grid grid-cols-2 gap-3 pb-12">
+            <!-- Se llena dinámicamente con JavaScript -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- VISTA FAVORITOS (NUEVA PESTAÑA INFERIOR) -->
+      <section id="view-favoritos" class="hidden p-4 space-y-3">
+        <div class="flex justify-between items-center border-b pb-2">
+          <h2 class="font-outfit font-bold text-base text-slate-800">❤️ Mis Productos Favoritos</h2>
+          <span id="favoritos-count" class="text-xs text-slate-500 font-semibold">0 artículos</span>
+        </div>
+        
+        <div id="favoritosListaContainer" class="space-y-2 pb-12">
+          <!-- Se llena dinámicamente con JS -->
+        </div>
+      </section>
+
+      <!-- VISTA PASES DE PUESTO -->
+      <section id="view-passes" class="hidden p-4 space-y-4">
+        <div class="text-center py-2">
+          <span class="bg-red-100 text-red-600 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase">100% Sin Comisiones</span>
+          <h2 class="font-outfit font-extrabold text-2xl text-slate-800 mt-2">Adquiere tu Pase Digital</h2>
+          <p class="text-xs text-slate-500 mt-1">Elige tu plan o activa tu código promocional para publicar.</p>
+        </div>
+
+        <div class="space-y-3">
+          
+          <!-- Pase VIP (Código Promocional Gratuito) -->
+          <div class="bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-400 rounded-2xl p-4 shadow-sm relative">
+            <span class="absolute -top-3 right-4 bg-yellow-400 text-slate-900 font-extrabold text-[10px] px-3 py-0.5 rounded-full uppercase shadow">Especial Vendedores</span>
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <span class="text-[10px] bg-yellow-200 text-yellow-800 font-bold px-2 py-0.5 rounded">Acceso VIP</span>
+                <h3 class="font-outfit font-bold text-lg text-slate-800 mt-1">Pase Invitado VIP</h3>
+              </div>
+              <span class="font-outfit font-extrabold text-2xl text-yellow-600">$0 <small class="text-xs font-normal">MXN</small></span>
+            </div>
+            <p class="text-xs text-slate-600 mb-3">Para los primeros vendedores del grupo. Canjea tu código promocional.</p>
+            <button onclick="abrirModalCanjeVIP()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-extrabold text-xs py-2.5 rounded-xl shadow">
+              ⭐ Canjear Código VIP
+            </button>
+          </div>
+
+          <!-- Pase Semanal -->
+          <div class="bg-white border-2 border-red-500 rounded-2xl p-4 shadow-md relative">
+            <span class="absolute -top-3 right-4 bg-red-500 text-white font-extrabold text-[10px] px-3 py-0.5 rounded-full uppercase shadow">Más Popular</span>
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <span class="text-[10px] bg-red-50 text-red-600 font-bold px-2 py-0.5 rounded">7 Días</span>
+                <h3 class="font-outfit font-bold text-lg text-slate-800 mt-1">Pase Semanal</h3>
+              </div>
+              <span class="font-outfit font-extrabold text-2xl text-red-500">$70 <small class="text-xs font-normal">MXN</small></span>
+            </div>
+            <p class="text-xs text-slate-500 mb-3">Tus productos visibles por 7 días, hasta 15 productos en plaza.</p>
+            <button onclick="comprarPase('semanal', 70)" class="w-full gradient-header text-white font-bold text-xs py-2.5 rounded-xl shadow">
+              Obtener Pase $70
+            </button>
+          </div>
+
+          <!-- Pase Mensual -->
+          <div class="bg-white border-2 border-slate-200 rounded-2xl p-4 shadow-sm">
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <span class="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded">30 días</span>
+                <h3 class="font-outfit font-bold text-lg text-slate-800 mt-1">Pase Mensual</h3>
+              </div>
+              <span class="font-outfit font-extrabold text-2xl text-slate-800">$240 <small class="text-xs font-normal">MXN</small></span>
+            </div>
+            <p class="text-xs text-slate-500 mb-3">Incluye productos ilimitados simultáneos en la plaza.</p>
+            <button onclick="comprarPase('mensual', 240)" class="w-full bg-slate-800 text-white font-bold text-xs py-2.5 rounded-xl hover:bg-slate-700">
+              Obtener Pase $240
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- MODAL PARA CANJEAR CÓDIGO VIP -->
+    <div id="modalCanjeVIP" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-sm rounded-3xl p-5 space-y-4 shadow-2xl relative">
+        <button onclick="cerrarModalCanjeVIP()" class="absolute top-4 right-4 text-slate-400 font-bold hover:text-slate-600">✕</button>
+        
+        <div class="text-center space-y-1">
+          <div class="w-12 h-12 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mx-auto text-xl">⭐</div>
+          <h3 class="font-outfit font-extrabold text-base text-slate-800">Activar Pase VIP</h3>
+          <p class="text-xs text-slate-500">Ingresa el código promocional que te dio el administrador.</p>
+        </div>
+
+        <div class="space-y-3">
+          <input type="text" id="inputCodigoVIP" placeholder="Ej." uppercase class="w-full text-center text-lg uppercase tracking-wider font-extrabold p-3 bg-slate-100 rounded-xl border border-slate-200 outline-none text-slate-800 focus:ring-2 focus:ring-yellow-400">
+          
+          <button onclick="validarCodigoVIP()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-extrabold text-xs py-3 rounded-xl shadow">
+            Activar mi Pase Gratis
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE CHAT INTERNO -->
+    <div id="modalChat" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-end justify-center">
+      <div class="bg-white w-full max-w-md rounded-t-3xl p-4 space-y-3 h-[80vh] flex flex-col justify-between shadow-2xl">
+        
+        <div class="flex justify-between items-center border-b pb-3 shrink-0">
+          <div>
+            <h3 id="chatProductoTitulo" class="font-outfit font-bold text-sm text-slate-800">Chat del Producto</h3>
+            <p class="text-[10px] text-green-600 font-medium flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Chat Directo Tianguis
+            </p>
+          </div>
+          <button onclick="cerrarModalChat()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">✕</button>
+        </div>
+
+        <div id="chatMensajesContainer" class="flex-grow overflow-y-auto space-y-3 p-3 bg-slate-100/70 rounded-2xl border border-slate-200">
+        </div>
+
+        <div class="flex flex-col gap-2 pt-2 border-t shrink-0">
+          <input type="text" id="chatInputRemitente" onchange="guardarNombreChat(this.value)" placeholder="Tu nombre o negocio (Ej. Oli / María)" class="p-2 text-xs bg-slate-100 rounded-xl border-none outline-none font-bold text-slate-700">
+          <div class="flex gap-2">
+            <input type="text" id="chatInputMensaje" onkeypress="if(event.key === 'Enter') enviarMensajeChat()" placeholder="Escribe tu mensaje..." class="flex-grow p-2.5 text-xs bg-slate-100 rounded-xl border-none outline-none focus:ring-2 focus:ring-red-400">
+            <button onclick="enviarMensajeChat()" class="bg-red-500 hover:bg-red-600 text-white font-bold text-xs px-4 rounded-xl shadow">
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MODAL DE CALIFICACIONES Y RESEÑAS -->
+    <div id="modalCalificar" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-end justify-center">
+      <div class="bg-white w-full max-w-md rounded-t-3xl p-4 space-y-3 h-[75vh] flex flex-col justify-between shadow-2xl">
+        
+        <div class="flex justify-between items-center border-b pb-3 shrink-0">
+          <div>
+            <h3 id="calificaVendedorTitulo" class="font-outfit font-bold text-sm text-slate-800">Reputación del Vendedor</h3>
+            <p class="text-[10px] text-yellow-500 font-medium">⭐ Calificaciones y Comentarios</p>
+          </div>
+          <button onclick="cerrarModalCalificar()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">✕</button>
+        </div>
+
+        <div id="calificacionesContainer" class="flex-grow overflow-y-auto space-y-2 p-2 bg-slate-50 rounded-2xl border border-slate-100">
+        </div>
+
+        <div class="space-y-2 pt-2 border-t shrink-0">
+          <input type="text" id="calificaComprador" placeholder="Tu nombre..." class="w-full p-2 text-xs bg-slate-100 rounded-xl border-none outline-none font-bold">
+          <div class="flex gap-2 items-center">
+            <select id="calificaEstrellas" class="p-2 text-xs bg-slate-100 rounded-xl border-none outline-none font-bold text-yellow-600">
+              <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+              <option value="4">⭐⭐⭐⭐ (4/5)</option>
+              <option value="3">⭐⭐⭐ (3/5)</option>
+              <option value="2">⭐⭐ (2/5)</option>
+              <option value="1">⭐ (1/5)</option>
+            </select>
+            <input type="text" id="calificaComentario" placeholder="Excelente servicio..." class="flex-grow p-2 text-xs bg-slate-100 rounded-xl border-none outline-none">
+            <button onclick="enviarCalificacion()" class="bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold text-xs px-3 py-2 rounded-xl shadow">
+              <i class="fa-solid fa-star"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MODAL DE GESTIÓN DE PUESTO / PIN -->
+    <div id="modalGestionPuesto" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-sm rounded-3xl p-5 space-y-4 shadow-2xl relative">
+        <button onclick="cerrarModalGestion()" class="absolute top-4 right-4 text-slate-400 font-bold hover:text-slate-600">✕</button>
+        
+        <div class="text-center space-y-1">
+          <div class="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto text-xl">⚙️</div>
+          <h3 id="gestionTituloVendedor" class="font-outfit font-extrabold text-base text-slate-800">Gestionar Puesto</h3>
+          <p class="text-xs text-slate-500">Ingresa tu PIN de 4 dígitos para administrar este producto.</p>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <input type="password" id="inputPinGestion" placeholder="Ingresa PIN (4 dígitos)" maxlength="4" pattern="[0-9]{4}" inputmode="numeric" class="w-full text-center text-lg tracking-widest font-bold p-3 bg-slate-100 rounded-xl border border-slate-200 outline-none text-red-600 focus:ring-2 focus:ring-red-400">
+          </div>
+
+          <div class="space-y-2 pt-2">
+            <button onclick="procesarAccionGestion('vendido')" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold text-xs py-3 rounded-xl shadow flex items-center justify-center gap-2">
+              🎉 Marcar como VENDIDO / Retirar
+            </button>
+            <button onclick="procesarAccionGestion('eliminar')" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs py-2.5 rounded-xl border border-red-200 flex items-center justify-center gap-2">
+              🗑️ Eliminar Definitivamente
+            </button>
+            <button onclick="procesarAccionGestion('link')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-2">
+              🔗 Copiar mi Link de Tienda
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL PARA PUBLICAR PRODUCTO / PUESTO -->
+    <div id="modalPublicar" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-end justify-center">
+      <div class="bg-white w-full max-w-md rounded-t-3xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+        <div class="flex justify-between items-center border-b pb-3">
+          <h3 class="font-outfit font-bold text-lg text-slate-800">➕ Publicar en la plaza</h3>
+          <button onclick="cerrarModalPublicar()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">✕</button>
+        </div>
+
+        <form id="publishForm" onsubmit="event.preventDefault(); publicarProducto();" class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Nombre de tu Negocio / Vendedor:</label>
+            <input type="text" id="prodVendedor" placeholder="Ej. Novedades María / Antojitos Juan" class="w-full p-2.5 text-xs bg-slate-100 rounded-xl border-none outline-none" required maxlength="50">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Número de WhatsApp (10 dígitos):</label>
+            <input type="tel" id="prodTel" placeholder="Ej. 5512345678" pattern="[0-9]{10}" maxlength="10" inputmode="numeric" class="w-full p-2.5 text-xs bg-slate-100 rounded-xl border-none outline-none font-bold text-green-700" required>
+            <p class="text-[9px] text-slate-400 mt-0.5">💬 Aquí te escribirán directamente los clientes desde la plaza.</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Crea tu PIN Secreto (4 dígitos para editar/vender):</label>
+            <input type="password" id="prodPin" placeholder="Ej. 1234" pattern="[0-9]{4}" maxlength="4" inputmode="numeric" class="w-full p-2.5 text-xs bg-slate-100 rounded-xl border-none outline-none font-bold tracking-widest text-red-600" required>
+            <p class="text-[9px] text-slate-400 mt-0.5">🔑 Solo tú con este PIN podrás marcar como vendido o borrar este puesto.</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Nombre del Producto / Servicio:</label>
+            <input type="text" id="prodTitulo" placeholder="Ej. Chamarra Paca Vintage / Postre de fresa" class="w-full p-2.5 text-xs bg-slate-100 rounded-xl border-none outline-none" required maxlength="60">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Precio ($ MXN):</label>
+              <input type="number" id="prodPrecio" placeholder="150" class="w-full p-2.5 text-xs bg-slate-100 rounded-xl border-none outline-none" required min="1" step="0.01">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Categoría:</label>
+              <select id="prodCategoria" class="w-full p-2.5 text-xs bg-slate-100 rounded-xl border-none outline-none" required>
+                <option value="moda">👗 Ropa y Moda</option>
+                <option value="antojitos">🍔 Antojitos y Postres</option>
+                <option value="hogar">📚 Hogar y Papelería</option>
+                <option value="servicios">🎨 Talleres y Servicios</option>
+                <option value="temporada">🎃 Artículos de Temporada</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Punto de Entrega / Zona:</label>
+            <input type="text" id="prodPunto" placeholder="Ej. Texcoco Centro / Metro Juárez" class="w-full p-2.5 text-xs bg-slate-100 rounded-xl border-none outline-none" required maxlength="80">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Descripción (Tallas, estado, detalles):</label>
+            <textarea id="prodDescripcion" placeholder="Ej. Talla M, poco uso, color negro, detalles en costura..." class="w-full p-2.5 text-xs bg-slate-100 rounded-xl border-none outline-none resize-none h-20" maxlength="200"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Fotos del Producto (1 a 3 imágenes):</label>
+            <input type="file" id="prodFotoFile" accept="image/*" multiple class="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-600 hover:file:bg-red-100">
+            <p class="text-[10px] text-slate-400 mt-1">Puedes seleccionar hasta 3 fotos a la vez (frente, detrás, detalles).</p>
+          </div>
+
+          <button type="submit" id="btnPublicar" class="w-full gradient-header text-white font-extrabold text-xs py-3 rounded-xl shadow-lg mt-2">
+            🔒 Publicar con Seguridad
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL DE VISOR DE IMAGEN / ZOOM -->
+    <div id="modalZoom" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex flex-col justify-center items-center p-4">
+      <button onclick="cerrarModalZoom()" class="absolute top-4 right-4 text-white text-2xl font-bold bg-white/20 w-10 h-10 rounded-full flex items-center justify-center">✕</button>
+      
+      <div class="relative max-w-lg w-full flex flex-col items-center">
+        <img id="zoomImagenPrincipal" src="" class="max-h-[70vh] max-w-full object-contain rounded-2xl shadow-2xl transition-transform duration-300">
+        <div id="zoomMiniaturasContainer" class="flex gap-2 mt-4 overflow-x-auto p-2">
+        </div>
+      </div>
+    </div>
+
+    <!-- NAVEGACIÓN INFERIOR -->
+    <nav class="fixed bottom-0 w-full max-w-md bg-white border-t border-slate-200 flex justify-around py-3 z-40 shadow-lg">
+      <button onclick="switchTab('feed')" id="nav-btn-feed" class="flex flex-col items-center text-xs font-bold text-red-500">
+        <i class="fa-solid fa-store text-lg"></i>
+        <span>Plaza</span>
+      </button>
+      <button onclick="switchTab('favoritos')" id="nav-btn-favoritos" class="flex flex-col items-center text-xs font-bold text-slate-400">
+        <i class="fa-solid fa-heart text-lg"></i>
+        <span>Favoritos</span>
+      </button>
+      <button onclick="switchTab('passes')" id="nav-btn-passes" class="flex flex-col items-center text-xs font-bold text-slate-400">
+        <i class="fa-solid fa-ticket text-lg"></i>
+        <span>Pases de Puesto</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+.gradient-header {
+  background: linear-gradient(135deg, #FF385C 0%, #FF6B00 100%) !important;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+body {
+  touch-action: manipulation;
+  background-color: #0f172a;
+}
